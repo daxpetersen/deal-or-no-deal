@@ -32,10 +32,10 @@ def wait_for_click_or_timeout(timeout_seconds):
         time_elapsed += clock.get_time()
 
 def spin_wheel():
-    options = ["skip","vowel","consonant","free_guess"]
+    options = ["skip","skip","skip","vowel","vowel","consonant","consonant","consonant","free_guess"]
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pygame.time.Clock()
-    spin_duration = 5000 
+    spin_duration = 3000 
     start_time = pygame.time.get_ticks()
     current_option = random.choice(options)
     while pygame.time.get_ticks() - start_time < spin_duration:
@@ -121,7 +121,7 @@ def get_free_guess_input(revealed_word):
     while input_active:
         screen.fill(WHITE)
         phrase_display = ' '.join([revealed_word[i] if revealed_word[i] != '_' else '_' for i in range(len(revealed_word))])
-        draw_text(screen, "Type the phrase (only where known letters aren't):", 50, 50)
+        draw_text(screen, "Type the phrase:", 50, 50)
         draw_text(screen, phrase_display, 50, 100)
         draw_text(screen, "Your input: " + input_text, 50, 150)
         pygame.display.flip()
@@ -140,6 +140,21 @@ def get_free_guess_input(revealed_word):
 
         clock.tick(FPS)
     return input_text.upper()
+def draw_button(screen, text, x, y, width, height, color, hover_color):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    
+    if x < mouse[0] < x + width and y < mouse[1] < y + height:
+        pygame.draw.rect(screen, hover_color, (x, y, width, height))
+        if click[0] == 1:  # Left mouse button clicked
+            return True
+    else:
+        pygame.draw.rect(screen, color, (x, y, width, height))
+    
+    font = pygame.font.SysFont("Arial", 24)
+    text_render = font.render(text, True, BLACK)
+    screen.blit(text_render, (x + (width - text_render.get_width()) // 2, y + (height - text_render.get_height()) // 2))
+    return False
 
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -181,20 +196,22 @@ def main():
             draw_text(screen, f"{player['name']} - Word to guess: {' '.join(revealed_word)}", 50, 150)
             draw_text(screen, f"Guesses left: {player['guesses']}", 50, 200)
             pygame.display.flip()
-            wait_for_click_or_timeout(5)
+            wait_for_click_or_timeout(10)
 
             wheel_result = spin_wheel()
+            
+
             if wheel_result == "skip":
                 draw_text(screen, "Turn skipped!", 50, 200)
                 pygame.display.flip()
                 wait_for_click_or_timeout(2)
                 break 
 
-            if wheel_result == "free_guess":
+            elif wheel_result == "free_guess":
                 draw_text(screen, "Free guess!", 50, 200)
                 pygame.display.flip()
                 wait_for_click_or_timeout(2)
-
+            
                 player_input = get_free_guess_input(revealed_word)
                 player_input = player_input.lower()
 
@@ -206,7 +223,14 @@ def main():
                     draw_text(screen, "Incorrect. Try again next time.", 50, 450)
                 pygame.display.flip()
                 wait_for_click_or_timeout(3) 
-
+            elif wheel_result == "vowel":
+                draw_text(screen, "Vowel!", 50, 200)
+                pygame.display.flip()
+                wait_for_click_or_timeout(2)
+            if wheel_result == "consonant":
+                draw_text(screen, "Consonant!", 50, 200)
+                pygame.display.flip()
+                wait_for_click_or_timeout(2)
             if "_" not in revealed_word:
                 draw_text(screen, f"{player['name']} guessed the word!", 50, 250)
                 pygame.display.flip()
@@ -218,8 +242,10 @@ def main():
                 pygame.display.flip()
                 wait_for_click_or_timeout(3)
                 break 
-
-            letter_type = "consonant" if random.random() < (1/3) else "vowel"
+            if wheel_result == "consonant" or wheel_result == "vowel":
+                letter_type = wheel_result
+            else:
+                letter_type = "consonant" if random.random() < (1/3) else "vowel"
             selected_letter = select_letter(player["used_letters"], letter_type, revealed_word).lower()
             if selected_letter in word_to_guess:
                 for i, char in enumerate(word_to_guess):
